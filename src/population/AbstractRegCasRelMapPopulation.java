@@ -25,7 +25,7 @@ import util.StaticMethods;
  * </p>
  *
  * <p>
- * 20140922 -  Updated setInstantInfection method </p>
+ * 20140922 - Updated setInstantInfection method </p>
  * <p>
  * 20140624 - Added export fields options, declare initialiseInfection as public </p>
  * <p>
@@ -34,6 +34,8 @@ import util.StaticMethods;
  * 20140122 - Addition of FIELDS_SUSCEPT</p>
  * <p>
  * 20180521 - Rework to fit in new package description</p>
+ * <p>
+ * 20180523 - Adjustment to update pair method for those with undefined relationship array</p>
  *
  */
 public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation {
@@ -360,6 +362,11 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
 
             // Update existing             
             SingleRelationship[] relArr = relMap.getRelationshipArray();
+
+            if (relMap.edgeSet().size() != relArr.length) {
+                relArr = relMap.edgeSet().toArray(new SingleRelationship[relMap.edgeSet().size()]);                
+            }
+
             for (SingleRelationship relArr1 : relArr) {
                 if (relArr1.incrementTime(1) <= 0) {
                     relMap.removeEdge(relArr1);
@@ -386,6 +393,9 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     }
 
     public int[] getNumInf() {
+        if (fields[FIELDS_NUMINF_LASTSTEP] == null) {
+            fields[FIELDS_NUMINF_LASTSTEP] = new int[getInfList().length];
+        }
         return (int[]) fields[FIELDS_NUMINF_LASTSTEP];
     }
 
