@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.*;
 import person.AbstractIndividualInterface;
 
-import population.person.SiteSpecificTransmissivity;
 import population.relationshipMap.RegCasRelationship;
 import random.RandomGenerator;
 import relationship.RelationshipMap;
@@ -14,6 +13,7 @@ import relationship.SingleRelationship;
 
 import util.PersonClassifier;
 import util.StaticMethods;
+import population.person.MultiSiteMultiStrainPersonInterface;
 
 /**
  *
@@ -364,7 +364,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
             SingleRelationship[] relArr = relMap.getRelationshipArray();
 
             if (relMap.edgeSet().size() != relArr.length) {
-                relArr = relMap.edgeSet().toArray(new SingleRelationship[relMap.edgeSet().size()]);                
+                relArr = relMap.edgeSet().toArray(new SingleRelationship[relMap.edgeSet().size()]);
             }
 
             for (SingleRelationship relArr1 : relArr) {
@@ -414,10 +414,10 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
         int[] numInfTotalByClassifier = new int[infClassifer.numClass()];
 
         for (int i = 0; i < getPop().length; i++) {
-            if (getPop()[i] instanceof SiteSpecificTransmissivity) {
+            if (getPop()[i] instanceof MultiSiteMultiStrainPersonInterface) {
                 int cI = infClassifer.classifyPerson(getPop()[i]);
                 if (cI >= 0 // && getPop()[i].getInfectionStatus(infId) != AbstractIndividualInterface.INFECT_S
-                        && strainNum > ((SiteSpecificTransmissivity) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()]) {
+                        && strainNum > ((MultiSiteMultiStrainPersonInterface) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()]) {
                     numInfTotalByClassifier[cI]++;
                 }
             }
@@ -429,10 +429,10 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
         }
 
         for (int i = 0; i < getPop().length; i++) {
-            if (getPop()[i] instanceof SiteSpecificTransmissivity) {
+            if (getPop()[i] instanceof MultiSiteMultiStrainPersonInterface) {
                 int cI = infClassifer.classifyPerson(getPop()[i]);
                 if (cI >= 0 // && getPop()[i].getInfectionStatus(infId) != AbstractIndividualInterface.INFECT_S
-                        && strainNum > ((SiteSpecificTransmissivity) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()]
+                        && strainNum > ((MultiSiteMultiStrainPersonInterface) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()]
                         && numForEachStrainByClassifier[cI] > 0) {
                     RandomGenerator infRNG = getInfRNG()[infId];
                     if (infRNG.nextInt(numInfTotalByClassifier[cI]) < numForEachStrainByClassifier[cI]) {
@@ -440,7 +440,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
                             // Introduce strain to non infected
                             getInfList()[infId].infecting(getPop()[i]);
                         }
-                        ((SiteSpecificTransmissivity) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = strainNum;
+                        ((MultiSiteMultiStrainPersonInterface) getPop()[i]).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = strainNum;
 
                         System.out.println("PID:" + getPop()[i].getId() + ": Strain " + strainNum + " at site " + getInfList()[infId].getInfectionIndex()
                                 + " of status " + getPop()[i].getInfectionStatus()[getInfList()[infId].getInfectionIndex()] + " at " + getGlobalTime());
@@ -543,7 +543,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
                         numInfByClass[cI]++;
 
                         if (strainDecompositionByClassStrains == null) { // Default strain of zero
-                            ((SiteSpecificTransmissivity) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = 0;
+                            ((MultiSiteMultiStrainPersonInterface) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = 0;
                         }
 
                     }
@@ -589,7 +589,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
 
             for (int i = 0; i < getPop().length; i++) {
                 AbstractIndividualInterface p = getPop()[i];
-                if (p instanceof SiteSpecificTransmissivity
+                if (p instanceof MultiSiteMultiStrainPersonInterface
                         && p.getInfectionStatus(infId) != AbstractIndividualInterface.INFECT_S) {
                     int cI = infClassifer.classifyPerson(p);
                     if (cI >= 0 && numByStrains[cI][numByStrains[cI].length - 1] > 0) {
@@ -601,7 +601,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
                                 || pStrain > numByStrains[cI][pt]) {
                             pt++;
                         }
-                        ((SiteSpecificTransmissivity) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = pt;
+                        ((MultiSiteMultiStrainPersonInterface) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = pt;
 
                         while (pt < numByStrains[cI].length) {
                             numByStrains[cI][pt]--;
@@ -609,7 +609,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
                         }
                     } else {
                         // All been allocated
-                        ((SiteSpecificTransmissivity) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = 0;
+                        ((MultiSiteMultiStrainPersonInterface) p).getCurrentStrainsAtSite()[getInfList()[infId].getInfectionIndex()] = 0;
                     }
 
                 }
@@ -631,11 +631,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     private RandomGenerator[] getInfRNG() {
         return (RandomGenerator[]) getFields()[FIELDS_INF_RNG];
     }
-
-    public int[] generatedPopSnapCount() {
-        return null;
-    }
-
+    
     protected AbstractInfection[] getIndivdualInfectionList(AbstractIndividualInterface person) {
         return getInfList(); // Default
     }
@@ -644,4 +640,35 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     public abstract void initialiseInfection(long seed);
 
     protected abstract AbstractIndividualInterface generateNewPerson(int nextId, AbstractIndividualInterface p, double newAge);
+
+    //If infId < 0 or > numeber of infection, it is for any infected 
+    public int[] getNumberOfInfected(int[] infIds) {
+        int[] res = new int[infIds.length];
+
+        for (AbstractIndividualInterface person : getPop()) {
+            boolean hasInfected = false;
+
+            int[] infStat = person.getInfectionStatus();
+
+            for (int i = 0; i < infStat.length; i++) {
+                if (infStat[i] != AbstractIndividualInterface.INFECT_S) {
+                    hasInfected |= true;
+                }
+            }
+
+            if (hasInfected) {
+                for (int i = 0; i < infIds.length; i++) {
+                    if (infIds[i] < 0 || infIds[i] > getInfList().length) {
+                        res[i]++;
+                    } else {
+                        res[i] += infStat[infIds[i]] != AbstractIndividualInterface.INFECT_S ? 1 : 0;
+
+                    }
+                }
+            }
+
+        }
+        return res;
+    }
+
 }

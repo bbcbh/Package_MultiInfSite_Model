@@ -2,15 +2,14 @@ package infection;
 
 import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import person.AbstractIndividualInterface;
-import population.person.SiteSpecificTransmissivity;
 import random.RandomGenerator;
-
+import population.person.MultiSiteMultiStrainPersonInterface;
 
 /**
  *
  * @author Ben Hui
  */
-public class GonorrhoeaSiteInfection extends AbstractInfection {
+public class GonorrhoeaSiteInfection extends AbstractInfection implements MultiStrainInfectionInterface {
 
     public static final String[] GONO_STATUS = {"Exposed", "Asymptomatic", "Symptomatic", "Immune"};
     public static final int DIST_EXPOSED_DUR_INDEX = 0;
@@ -22,6 +21,8 @@ public class GonorrhoeaSiteInfection extends AbstractInfection {
     public static final int DIST_SUS_PROB_INDEX = DIST_TRANS_PROB_INDEX + 1;
     public static final int DIST_TOTAL = DIST_SUS_PROB_INDEX + 1;
     private final int siteIndex;
+
+    float[][] coexistMat;
 
     public GonorrhoeaSiteInfection(RandomGenerator RNG,
             int infectionIndex,
@@ -40,7 +41,6 @@ public class GonorrhoeaSiteInfection extends AbstractInfection {
         this.setInfectionState(GONO_STATUS);
         storeDistributions(siteSpecificDist, siteSpecificParam);
     }
-
 
     public int getSiteIndex() {
         return siteIndex;
@@ -82,14 +82,14 @@ public class GonorrhoeaSiteInfection extends AbstractInfection {
             case STATUS_IMM: // Immumne -> S
                 this.setInfection(person, AbstractIndividualInterface.INFECT_S, Double.POSITIVE_INFINITY);
                 res = Double.POSITIVE_INFINITY;
-                if (person instanceof SiteSpecificTransmissivity) {
+                if (person instanceof MultiSiteMultiStrainPersonInterface) {
                     // Fully (?) suscepitble after recovery      
                     // If < 0 use default
-                    if (((SiteSpecificTransmissivity) person).getProbSusBySite()[getSiteIndex()] < 0) {
-                        ((SiteSpecificTransmissivity) person).getProbSusBySite()[getSiteIndex()] = getRandomDistValue(DIST_SUS_PROB_INDEX);
+                    if (((MultiSiteMultiStrainPersonInterface) person).getProbSusBySite()[getSiteIndex()] < 0) {
+                        ((MultiSiteMultiStrainPersonInterface) person).getProbSusBySite()[getSiteIndex()] = getRandomDistValue(DIST_SUS_PROB_INDEX);
                     }
 
-                    ((SiteSpecificTransmissivity) person).getCurrentStrainsAtSite()[getSiteIndex()] = SiteSpecificTransmissivity.STRAIN_NONE;
+                    ((MultiSiteMultiStrainPersonInterface) person).getCurrentStrainsAtSite()[getSiteIndex()] = MultiSiteMultiStrainPersonInterface.STRAIN_NONE;
                 }
 
                 break;
@@ -108,11 +108,11 @@ public class GonorrhoeaSiteInfection extends AbstractInfection {
             setInfectionIndex(getSiteIndex());
             setInfection(target, STATUS_EXP, Math.round(res));
             setInfectionIndex(infIndex);
-            if (target instanceof SiteSpecificTransmissivity) {
+            if (target instanceof MultiSiteMultiStrainPersonInterface) {
                 // Set probabilty of transmission from target to next person.
                 // If < 0 use default
-                if (((SiteSpecificTransmissivity) target).getProbTransBySite()[getSiteIndex()] < 0) {
-                    ((SiteSpecificTransmissivity) target).getProbTransBySite()[getSiteIndex()] = getRandomDistValue(DIST_TRANS_PROB_INDEX);
+                if (((MultiSiteMultiStrainPersonInterface) target).getProbTransBySite()[getSiteIndex()] < 0) {
+                    ((MultiSiteMultiStrainPersonInterface) target).getProbTransBySite()[getSiteIndex()] = getRandomDistValue(DIST_TRANS_PROB_INDEX);
                 }
 
             }
@@ -170,6 +170,45 @@ public class GonorrhoeaSiteInfection extends AbstractInfection {
     protected void setInfection(AbstractIndividualInterface p, int status, double duration) {
         p.setInfectionStatus(getSiteIndex(), status);
         p.setTimeUntilNextStage(getSiteIndex(), duration);
+    }
+
+    @Override
+    public void setStrainCoexistMatrix(float[][] mat) {
+        coexistMat = mat;
+    }
+
+    @Override
+    public float[][] getStrainCoexistMatrix() {
+        return coexistMat;
+    }
+
+    @Override
+    public void setStrainSpecificParamter(int strainNum, Object[] value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Object[] getStrainSpecificParamter(int strainNum) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public float getProbabityCoexist(int strainNum, int existingInfectionStat) {
+        float coexitProb = 0;
+        if (coexistMat != null) {
+            coexitProb = 1;
+            int existStrain = existingInfectionStat;
+            int existStrainId = 0;
+            while (existStrain > 0) {
+                if ((existStrain & 1) > 0) {
+                    coexitProb = coexitProb * coexistMat[existStrainId][strainNum];
+                }
+                existStrain = existStrain >> 1;
+                existStrainId++;
+            }
+        }
+
+        return coexitProb;
     }
 
 }

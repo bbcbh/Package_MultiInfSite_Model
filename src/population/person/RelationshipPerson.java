@@ -4,7 +4,7 @@ import infection.AbstractInfection;
 import java.io.Serializable;
 import java.util.Arrays;
 import person.AbstractIndividualInterface;
-
+import infection.MultiStrainInfectionInterface;
 
 /**
  *
@@ -19,9 +19,11 @@ import person.AbstractIndividualInterface;
  * 20140409: Check support for getting last act infectious </p>
  * <p>
  * 20180521: Rework to fit in new package description</p>
+ * <p>
+ * 20180528: Add set strain at site method</p>
  *
  */
-public class RelationshipPerson implements IndividualWithRelationshipInterface, SiteSpecificTransmissivity, Serializable {
+public class RelationshipPerson implements IndividualWithRelationshipInterface, MultiSiteMultiStrainPersonInterface, Serializable {
 
     protected static final String[] PARAM_NANE_INT = {"PARAM_ID", "PARAM_MAX_PARTNER", "PARAM_ENTER_POP_AT"};
     protected static final String[] PARAM_NAME_DOUBLE = {"PARAM_AGE", "PARAM_STARTING_AGE", "PARAM_TIME_UNTIL_NEXT_REL"};
@@ -49,8 +51,6 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
     // Strain info
     protected int[] currentStrainsAtSite;
     protected int[] lastActStainsAtSite;
-    protected double[][] currentStrainLastUntilOfAgeAtSite;
-    protected int[][] strainPriorityAtSite; // int[site] { 0, 1, (if the last bit dominant, for example) }
 
     //<editor-fold defaultstate="collapsed" desc="Atomic function">    
     @Override
@@ -111,12 +111,12 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
     // </editor-fold>   
     //<editor-fold defaultstate="collapsed" desc="Infection">    
     @Override
-    public int[] getInfectionStatus() {              
+    public int[] getInfectionStatus() {
         return infectionStatus;
     }
 
     @Override
-    public int getInfectionStatus(int index) {              
+    public int getInfectionStatus(int index) {
         return infectionStatus[index];
     }
 
@@ -215,8 +215,6 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
         probSus = new double[numSite];
         currentStrainsAtSite = new int[numSite];
         lastActStainsAtSite = new int[numSite];
-        currentStrainLastUntilOfAgeAtSite = new double[numSite][];
-        strainPriorityAtSite = new int[numSite][];
 
         Arrays.fill(infectionStatus, AbstractIndividualInterface.INFECT_S);
         Arrays.fill(timeUntilNextStage, Double.POSITIVE_INFINITY);
@@ -224,8 +222,8 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
         Arrays.fill(lastActInfectious, false);
         Arrays.fill(probTrans, -1); // -1 = use infection default
         Arrays.fill(probSus, -1);
-        Arrays.fill(currentStrainsAtSite, SiteSpecificTransmissivity.STRAIN_NONE);
-        Arrays.fill(lastActStainsAtSite, SiteSpecificTransmissivity.STRAIN_NONE);
+        Arrays.fill(currentStrainsAtSite, MultiSiteMultiStrainPersonInterface.STRAIN_NONE);
+        Arrays.fill(lastActStainsAtSite, MultiSiteMultiStrainPersonInterface.STRAIN_NONE);
 
     }
 
@@ -238,77 +236,53 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
             if (timeUntilNextStage[i] <= 0 && infectionList[i] != null) {
                 res = Math.min(res, (int) infectionList[i].advancesState(this));
                 if (infectionStatus[i] == INFECT_S) {
-                    currentStrainsAtSite[i] = SiteSpecificTransmissivity.STRAIN_NONE;
-                    if (currentStrainLastUntilOfAgeAtSite[i] != null) {
-                        // Full recovery
-                        Arrays.fill(currentStrainLastUntilOfAgeAtSite[i], Double.NaN);
-                    }
-                } else if (currentStrainLastUntilOfAgeAtSite[i] != null) {
-                    domainatingLastUntil(infectionList, i, res);
+                    currentStrainsAtSite[i] = MultiSiteMultiStrainPersonInterface.STRAIN_NONE;
                 }
 
             }
             // Infection from last act
-            if (this.lastActInfectious[i] && infectionStatus[i] == INFECT_S) {
-                res = Math.min(res, (int) infectionList[i].infecting(this));
-                currentStrainsAtSite[i] = lastActStainsAtSite[i];
+            if (this.lastActInfectious[i]) {
+                if (infectionStatus[i] == INFECT_S) {
+                    res = Math.min(res, (int) infectionList[i].infecting(this));
+                    currentStrainsAtSite[i] = lastActStainsAtSite[i];
 
-                if (currentStrainLastUntilOfAgeAtSite[i] != null) {
-                    domainatingLastUntil(infectionList, i, res);
+                } else if (currentStrainsAtSite[i] != lastActStainsAtSite[i]
+                        && infectionList[i] instanceof MultiStrainInfectionInterface) {
+
+                    float[][] coexistMat = ((MultiStrainInfectionInterface) infectionList[i]).getStrainCoexistMatrix();
+
+                    if (coexistMat != null) {
+                        int newStrainAdded = (lastActStainsAtSite[i] | currentStrainsAtSite[i]) - currentStrainsAtSite[i];
+
+                        int newStrainId = 0;
+                        while (newStrainAdded > 0) {
+                            if ((newStrainAdded & 1) > 0) {
+                                float coexitProb = 
+                                        ((MultiStrainInfectionInterface) infectionList[i]).getProbabityCoexist(newStrainId, currentStrainsAtSite[i]);
+
+                                if (coexitProb < 1 && coexitProb > 0) {
+                                    coexitProb = infectionList[i].getRNG().nextFloat() < coexitProb ? 1 : 0;
+                                }
+
+                                if (coexitProb == 1) {
+                                    currentStrainsAtSite[i] += (1 << newStrainId);
+                                }
+                            }
+                            newStrainAdded = newStrainAdded >> 1;
+                            newStrainId++;
+                        }
+
+                    }
                 }
 
             }
 
             res = Math.min(res, (int) this.timeUntilNextStage[i]);
             this.lastActInfectious[i] = false;
-            this.lastActStainsAtSite[i] = SiteSpecificTransmissivity.STRAIN_NONE;
+            this.lastActStainsAtSite[i] = MultiSiteMultiStrainPersonInterface.STRAIN_NONE;
 
         }
         return res;
-    }
-
-    @Override
-    public int getCurrentDomainantStrainAtSite(int siteIndex) {
-        int curStrain = currentStrainsAtSite[siteIndex];
-        int strainPt = 0;
-
-        if (curStrain > 0) {
-
-            if (strainPriorityAtSite[siteIndex] != null) {
-                strainPt = -1;
-                for (int strainPointer = 0; strainPointer < getStrainPriorityBitAtSite()[siteIndex].length && strainPt < 0; strainPointer++) {
-                    if ((curStrain & (1 << getStrainPriorityBitAtSite()[siteIndex][strainPointer])) != 0) {
-                        strainPt = getStrainPriorityBitAtSite()[siteIndex][strainPointer];
-
-                    }
-                }
-
-            } else {
-
-                // Undefined - use the last 
-                while ((curStrain & (1 << strainPt)) == 0) {
-                    strainPt++;
-                }
-
-            }
-        }
-        return strainPt;
-    }
-
-    private void domainatingLastUntil(AbstractInfection[] infectionList, int siteIndex, int domainantDuration) {
-        int domainantStrainIndex = infectionList[siteIndex].getInfectionIndex() / currentStrainsAtSite.length;
-
-        // The duration control by the domainant one
-        double lastUntilDominated = getAge() + domainantDuration;
-        currentStrainLastUntilOfAgeAtSite[siteIndex][domainantStrainIndex] = lastUntilDominated;
-
-        // The duration of the other strains will be dominated
-        for (int s = 0; s < currentStrainLastUntilOfAgeAtSite[siteIndex].length; s++) {
-            if (currentStrainLastUntilOfAgeAtSite[siteIndex][s] != Double.NaN) {
-                currentStrainLastUntilOfAgeAtSite[siteIndex][s] = Math.min(lastUntilDominated,
-                        currentStrainLastUntilOfAgeAtSite[siteIndex][s]);
-            }
-        }
     }
 
     public String indexToParamName(int index) {
@@ -345,13 +319,8 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
     }
 
     @Override
-    public double[][] getCurrentStrainLastUntilOfAgeAtSite() {
-        return currentStrainLastUntilOfAgeAtSite;
-    }
-
-    @Override
-    public int[][] getStrainPriorityBitAtSite() {
-        return strainPriorityAtSite;
+    public void setCurrentStrainAtSite(int site, int strainNum) {
+        currentStrainsAtSite[site] = strainNum;
     }
 
 }
