@@ -249,6 +249,11 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     }
 // </editor-fold>
 
+    public AbstractIndividualInterface getPersonById(int id) {
+        Map<Integer, AbstractIndividualInterface> map = getLocalData();
+        return map.get(id);
+    }
+
     public RelationshipMap[] getRelMap() {
         return (RelationshipMap[]) fields[FIELDS_REL_MAP];
     }
@@ -631,7 +636,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     private RandomGenerator[] getInfRNG() {
         return (RandomGenerator[]) getFields()[FIELDS_INF_RNG];
     }
-    
+
     protected AbstractInfection[] getIndivdualInfectionList(AbstractIndividualInterface person) {
         return getInfList(); // Default
     }
