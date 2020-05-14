@@ -1,6 +1,5 @@
 package infection.vaccination;
 
-import java.util.Arrays;
 import person.AbstractIndividualInterface;
 
 /**
