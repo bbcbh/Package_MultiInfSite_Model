@@ -25,7 +25,11 @@ import infection.MultiStrainInfectionInterface;
  */
 public class RelationshipPerson implements IndividualWithRelationshipInterface, MultiSiteMultiStrainPersonInterface, Serializable {
 
-    protected static final String[] PARAM_NANE_INT = {"PARAM_ID", "PARAM_MAX_PARTNER", "PARAM_ENTER_POP_AT"};
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -2900649053966848313L;
+	protected static final String[] PARAM_NANE_INT = {"PARAM_ID", "PARAM_MAX_PARTNER", "PARAM_ENTER_POP_AT"};
     protected static final String[] PARAM_NAME_DOUBLE = {"PARAM_AGE", "PARAM_STARTING_AGE", "PARAM_TIME_UNTIL_NEXT_REL"};
     // Integer    
     public static final int PARAM_ID = 0;
@@ -153,7 +157,7 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
     // </editor-fold>       
     // <editor-fold defaultstate="collapsed" desc="Get and set parameter function ">    
     @Override
-    public Comparable getParameter(String id) {
+    public Comparable<?> getParameter(String id) {
         for (int i = 0; i < PARAM_NANE_INT.length; i++) {
             if (PARAM_NANE_INT[i].equals(id)) {
                 return paramInt[i];
@@ -168,8 +172,8 @@ public class RelationshipPerson implements IndividualWithRelationshipInterface, 
     }
 
     @Override
-    public Comparable setParameter(String id, Comparable val) {
-        Comparable ret = null;
+    public Comparable<?> setParameter(String id, Comparable<?> val) {
+        Comparable<?> ret = null;
         if (val instanceof Number) {
             if (val instanceof Integer) {
                 for (int i = 0; i < PARAM_NANE_INT.length; i++) {

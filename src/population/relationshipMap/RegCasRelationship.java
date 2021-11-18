@@ -17,7 +17,11 @@ import relationship.SingleRelationship;
  */
 public class RegCasRelationship extends SingleRelationship {
 
-    public static final int REL_TYPE_REG = 0;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 4053666610636225484L;
+	public static final int REL_TYPE_REG = 0;
     public static final int REL_TYPE_CAS = 1;
     protected int type;
     protected int relPt = 0;

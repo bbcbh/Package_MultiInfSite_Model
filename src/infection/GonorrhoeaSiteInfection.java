@@ -11,7 +11,11 @@ import population.person.MultiSiteMultiStrainPersonInterface;
  */
 public class GonorrhoeaSiteInfection extends AbstractInfection implements MultiStrainInfectionInterface {
 
-    public static final String[] GONO_STATUS = {"Exposed", "Asymptomatic", "Symptomatic", "Immune"};
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4055734401043581729L;
+	public static final String[] GONO_STATUS = {"Exposed", "Asymptomatic", "Symptomatic", "Immune"};
     public static final int DIST_EXPOSED_DUR_INDEX = 0;
     public static final int DIST_INFECT_DUR_ASY_INDEX = DIST_EXPOSED_DUR_INDEX + 1;
     public static final int DIST_INFECT_DUR_SYM_INDEX = DIST_INFECT_DUR_ASY_INDEX + 1;

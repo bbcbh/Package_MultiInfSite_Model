@@ -90,11 +90,11 @@ public class StaticMethods {
 
     }
 
-    public static Object propStrToObject(String ent, Class cls) {
+    public static Object propStrToObject(String ent, Class<?> cls) {
         return util.PropValUtils.propStrToObject(ent, cls);
     }
 
-    public static String objectToPropStr(Object ent, Class cls) {
+    public static String objectToPropStr(Object ent, Class<?> cls) {
         return util.PropValUtils.objectToPropStr(ent, cls);
     }
 
@@ -261,9 +261,7 @@ public class StaticMethods {
         if (numSim <= 0 || true) {
             numSim = 0;
             try {
-                Object obj;
-                while ((obj = objStr.readObject()) != null) {
-                    //System.out.println("#"+ numSim + ":" +  Arrays.deepToString((Object[]) obj));                    
+                while ((objStr.readObject()) != null) {                                       
                     numSim++;
                 }
             } catch (EOFException ex) {

@@ -12,7 +12,11 @@ import util.ArrayUtilsRandomGenerator;
  */
 public class UniformMixingAvailability extends AbstractAvailability {
 
-    private AbstractIndividualInterface[][] available;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 7600266421353985733L;
+	private AbstractIndividualInterface[][] available;
     private AbstractIndividualInterface[][] pairing = null;
 
     public UniformMixingAvailability(RandomGenerator RNG) {

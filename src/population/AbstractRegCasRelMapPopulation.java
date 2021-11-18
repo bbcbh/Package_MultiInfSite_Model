@@ -40,7 +40,11 @@ import population.person.MultiSiteMultiStrainPersonInterface;
  */
 public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation {
 
-    public static final int FIELDS_SEED = 0;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 5271968538674411538L;
+	public static final int FIELDS_SEED = 0;
     public static final int FIELDS_RNG = FIELDS_SEED + 1;
     public static final int FELIDS_POP = FIELDS_RNG + 1;
     public static final int FIELDS_REL_MAP = FELIDS_POP + 1;
@@ -283,7 +287,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
     }
 
     public void setSeed(long seed) {
-        fields[FIELDS_SEED] = new Long(seed);
+        fields[FIELDS_SEED] = seed;
     }
 
     @Override
@@ -302,7 +306,7 @@ public abstract class AbstractRegCasRelMapPopulation extends AbstractPopulation 
                 || getRelMap()[mappingIndex].degreeOf(person.getId()) < 1;
     }
 
-    public Class getFieldClass(int fieldNum) {
+    public Class<?> getFieldClass(int fieldNum) {
         if (fieldNum < getFields().length) {
             return getFields()[fieldNum] != null ? getFields()[fieldNum].getClass() : null;
         } else {
